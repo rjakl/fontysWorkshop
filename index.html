@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>V3D1 bones</title>
+    <style>
+        body { margin: 0; padding: 0; }
+        canvas { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<script src="three.js"></script>
+<script src="dat.gui.min.js"></script>
+
+<script src="FBXLoader.js"></script>
+<script src="inflate.min.js"></script>
+<script>
+    var camera;
+
+    var WIDTH = window.innerWidth;
+    var HEIGHT = window.innerHeight;
+    /* all our JavaScript code goes here */
+
+
+    var renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.shadowMapEnabled = true;
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setClearColor(0xDDDDDD, 1);
+    document.body.appendChild(renderer.domElement);
+
+    var scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(70, WIDTH/HEIGHT);
+    camera.position.z = 50;
+    scene.add(camera);
+    
+		light = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+  	light.position.set( 0, 100, 0 );
+  	scene.add( light );
+
+
+    var spotLight = new THREE.SpotLight( 0xcccccc, 2.25 );
+    spotLight.position.set( 100, 130, 0 );         
+    spotLight.castShadow = true;       
+
+        
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+    
+    spotLight.shadow.camera.near = 30;
+    spotLight.shadow.camera.far = 5000;
+    spotLight.shadow.camera.fov = 30;
+
+
+    var mixers = [];
+
+    var childMat = new THREE.MeshBasicMaterial();
+    var meshObject;
+
+    var loader = new THREE.FBXLoader();
+    loader.load( 'pirate_p_konstantinov@Boxing.fbx', function ( object ) {
+                          
+        object.mixer = new THREE.AnimationMixer( object );
+        mixers.push( object.mixer );
+
+        meshObject = object;
+        object.scale.x = 0.5;
+        object.scale.y = 0.5;
+        object.scale.z = 0.5;
+        object.position.y -= 20;
+        var action = object.mixer.clipAction( object.animations[ 0 ] );
+        action.play();
+
+        object.traverse( function ( child ) {
+
+            if ( child.isMesh ) {
+
+                //child.material = childMat;
+                //child.material.color.setHex(0x993300);
+                child.castShadow = true;
+                child.receiveShadow = true;
+
+            }
+
+        } );
+
+        scene.add( object );
+        spotLight.target = object;
+        scene.add(spotLight);
+
+    } );
+
+
+  
+
+
+    init();
+
+    function init() {
+        window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    var clock = new THREE.Clock();
+
+
+    function animate() {
+
+        requestAnimationFrame( animate );
+
+
+        if ( mixers.length > 0 ) {
+
+            for ( var i = 0; i < mixers.length; i ++ ) {
+
+                mixers[ i ].update( clock.getDelta() );
+
+
+            }
+
+        }
+        if (meshObject){
+          meshObject.rotation.y += 0.01;
+        }
+                                       
+        renderer.render( scene, camera );
+
+
+
+    }
+
+    animate();
+
+</script>
+
+
+
+</body>
+</html>
